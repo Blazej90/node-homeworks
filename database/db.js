@@ -1,7 +1,8 @@
+require("dotenv").config();
+
 const mongoose = require("mongoose");
 
-const uri =
-  "mongodb+srv://blazejdeveloper:sauSEoQGBsYGnNgR@cluster0.9i9f2gc.mongodb.net/db-contacts?";
+const uri = process.env.MONGODB_URI;
 
 const options = {
   useNewUrlParser: true,

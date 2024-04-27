@@ -115,13 +115,14 @@ const contactSchema = new mongoose.Schema({
   email: { type: String, required: true },
   phone: { type: String, required: true },
   favorite: { type: Boolean, default: false },
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
 const Contact = mongoose.model("Contact", contactSchema);
 
-const listContacts = async () => {
+const listContacts = async (userID) => {
   try {
-    const contacts = await Contact.find();
+    const contacts = await Contact.find({ owner: userId });
     return contacts;
   } catch (error) {
     throw new Error("Error while fetching contacts");
