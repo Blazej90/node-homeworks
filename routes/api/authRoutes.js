@@ -1,4 +1,5 @@
 const express = require("express");
+const dotenv = require("dotenv");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const jwtSecret = process.env.JWT_SECRET;
@@ -6,7 +7,7 @@ const mongoose = require("mongoose");
 const User = require("../../models/user");
 
 require("dotenv").config();
-// console.log(process.env.JWT_SECRET);
+console.log(process.env.JWT_SECRET);
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
@@ -84,7 +85,7 @@ router.post("/login", async (req, res) => {
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "30d",
+      expiresIn: "12h",
     });
 
     res.status(200).json({ token });
