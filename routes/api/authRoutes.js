@@ -31,6 +31,7 @@ const authenticateToken = (req, res, next) => {
   }
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
+      console.error("Error during token verification:", err);
       return res.status(401).json({ message: "Not authorized" });
     }
     req.user = user;
@@ -100,7 +101,7 @@ router.get("/contacts", async (req, res) => {
   try {
     const token = req.headers.authorization.split(" ")[1];
 
-    const decodedToken = jwt.verify(token, jwtSecret);
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
 
     const userId = decodedToken.userId;
 
@@ -118,11 +119,17 @@ router.get("/contacts", async (req, res) => {
 // Endpoint wylogowania użytkownika
 router.get("/logout", async (req, res) => {
   try {
-    const decodedToken = jwt.verify(
-      req.headers.authorization.split(" ")[1],
-      jwtSecret
-    );
+    const token = req.headers.authorization.split(" ")[1];
+
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+
     const userId = decodedToken.userId;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     await User.findByIdAndUpdate(userId, { token: null });
 
