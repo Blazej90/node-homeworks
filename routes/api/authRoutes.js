@@ -117,13 +117,9 @@ router.get("/contacts", async (req, res) => {
 });
 
 // Endpoint wylogowania użytkownika
-router.get("/logout", async (req, res) => {
+router.get("/logout", authenticateToken, async (req, res) => {
   try {
-    const token = req.headers.authorization.split(" ")[1];
-
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-
-    const userId = decodedToken.userId;
+    const userId = req.user.userId;
 
     const user = await User.findById(userId);
 
