@@ -14,7 +14,10 @@ async function authenticateToken(req, res, next) {
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    req.user = { userId: decoded.userId };
+    req.user = {
+      userId: decoded.userId,
+      avatarURL: user.avatarURL,
+    };
     next();
   } catch (error) {
     console.error("Error during token verification:", error);

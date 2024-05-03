@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const gravatar = require("gravatar");
 
 const userSchema = new mongoose.Schema({
   password: {
@@ -19,6 +21,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  avatarURL: {
+    type: String,
+    default: null,
+  },
 });
 
 userSchema.pre("save", async function (next) {
@@ -29,6 +35,17 @@ userSchema.pre("save", async function (next) {
   try {
     const hashedPassword = await bcrypt.hash(user.password, saltRounds);
     user.password = hashedPassword;
+
+    // Generowanie awatara z Gravatara na podstawie adresu e-mail
+    if (!user.avatarURL) {
+      const avatar = gravatar.url(user.email, {
+        s: "200",
+        r: "pg",
+        d: "mp",
+      });
+      user.avatarURL = avatar;
+    }
+
     next();
   } catch (error) {
     return next(error);
