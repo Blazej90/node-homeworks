@@ -11,6 +11,22 @@ const path = require("path");
 const fs = require("fs");
 const Jimp = require("jimp");
 
+const tmpFolderPath = "../../tmp";
+const avatarsFolderPath = "../../public/avatars";
+
+function moveAvatarToPublicFolder(avatarFileName) {
+  const tmpFilePath = path.join(tmpFolderPath, avatarFileName);
+  const avatarDestination = path.join(avatarsFolderPath, avatarFileName);
+
+  fs.rename(tmpFilePath, avatarDestination, (err) => {
+    if (err) {
+      console.error("Error moving avatar file:", err);
+    } else {
+      console.log("Avatar file moved successfully");
+    }
+  });
+}
+
 require("dotenv").config();
 console.log(process.env.JWT_SECRET);
 mongoose
@@ -107,23 +123,6 @@ router.patch(
       await avatar.resize(250, 250);
 
       const avatarFileName = `${userId}_${Date.now()}.${avatar.getExtension()}`;
-
-      const tmpFolderPath = "../../tmp";
-
-      const avatarsFolderPath = "../../public/avatars";
-
-      function moveAvatarToPublicFolder(avatarFileName) {
-        const tmpFilePath = path.join(tmpFolderPath, avatarFileName);
-        const avatarDestination = path.join(avatarsFolderPath, avatarFileName);
-
-        fs.rename(tmpFilePath, avatarDestination, (err) => {
-          if (err) {
-            console.error("Error moving avatar file:", err);
-          } else {
-            console.log("Avatar file moved successfully");
-          }
-        });
-      }
 
       // Wywołanie funkcji przenoszącej plik
       moveAvatarToPublicFolder(avatarFileName);
