@@ -14,16 +14,20 @@ const Jimp = require("jimp");
 const tmpFolderPath = "../../tmp";
 const avatarsFolderPath = "../../public/avatars";
 
-function moveAvatarToPublicFolder(avatarFileName) {
+async function moveAvatarToPublicFolder(avatarFileName) {
   const tmpFilePath = path.join(tmpFolderPath, avatarFileName);
   const avatarDestination = path.join(avatarsFolderPath, avatarFileName);
 
-  fs.rename(tmpFilePath, avatarDestination, (err) => {
-    if (err) {
-      console.error("Error moving avatar file:", err);
-    } else {
-      console.log("Avatar file moved successfully");
-    }
+  return new Promise((resolve, reject) => {
+    fs.rename(tmpFilePath, avatarDestination, (err) => {
+      if (err) {
+        console.error("Error moving avatar file:", err);
+        reject(err);
+      } else {
+        console.log("Avatar file moved successfully");
+        resolve();
+      }
+    });
   });
 }
 
@@ -124,9 +128,7 @@ router.patch(
 
       const avatarFileName = `${userId}_${Date.now()}.${avatar.getExtension()}`;
 
-      // Wywołanie funkcji przenoszącej plik
-      moveAvatarToPublicFolder(avatarFileName);
-
+      await moveAvatarToPublicFolder(avatarFileName);
       const avatarURL = `/avatars/${avatarFileName}`;
       user.avatarURL = avatarURL;
       await user.save();
