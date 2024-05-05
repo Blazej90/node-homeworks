@@ -10,10 +10,13 @@ const gravatar = require("gravatar");
 const path = require("path");
 const fs = require("fs");
 const Jimp = require("jimp");
+const nodemailer = require("nodemailer");
+const { v4: uuidv4 } = require("uuid");
 
 const tmpFolderPath = "../../tmp";
 const avatarsFolderPath = "../../public/avatars";
 
+// Funkcja przeniesienia awatara
 async function moveAvatarToPublicFolder(avatarFileName) {
   const tmpFilePath = path.join(tmpFolderPath, avatarFileName);
   const avatarDestination = path.join(avatarsFolderPath, avatarFileName);
@@ -30,6 +33,16 @@ async function moveAvatarToPublicFolder(avatarFileName) {
     });
   });
 }
+
+// Tworzenie transportera e-maili z użyciem Mailtrap
+const transporter = nodemailer.createTransport({
+  host: "sandbox.smtp.mailtrap.io",
+  port: 2525,
+  auth: {
+    user: process.env.MAILTRAP_API_KEY,
+    pass: process.env.MAILTRAP_API_KEY,
+  },
+});
 
 require("dotenv").config();
 console.log(process.env.JWT_SECRET);
@@ -90,12 +103,18 @@ router.post("/signup", async (req, res) => {
       return res.status(409).json({ message: "Email already in use" });
     }
 
-    const avatarURL = gravatar.url(email, { s: "200", d: "identicon" });
+    const verificationToken = uuidv4();
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new User({ email, password: hashedPassword, avatarURL });
+    const newUser = new User({ email, password, verificationToken });
     await newUser.save();
+
+    const mailOptions = {
+      from: "blazej.developer@gmail.com",
+      to: "example@example.com",
+      subject: "Account Verification",
+      html: `<p>Click <a href="http://demomailtrap.com/users/verify/${verificationToken}">here</a> to verify your account.</p>`,
+    };
+    await transporter.sendMail(mailOptions);
 
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
@@ -140,6 +159,67 @@ router.patch(
     }
   }
 );
+
+// Endpoint do weryfikacji emaila na podstawie tokena
+router.get("/verify/:verificationToken", async (req, res) => {
+  try {
+    const verificationToken = req.params.verificationToken;
+
+    const user = await User.findOne({ verificationToken });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.verificationToken = null;
+    user.verify = true;
+    await user.save();
+
+    res.status(200).json({ message: "Verification successful" });
+  } catch (error) {
+    console.error("Error verifying user:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.post("/users/verify", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Missing required field: email" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.verify) {
+      return res
+        .status(400)
+        .json({ message: "Verification has already been passed" });
+    }
+
+    const verificationToken = uuidv4();
+    user.verificationToken = verificationToken;
+    await user.save();
+
+    const mailOptions = {
+      from: "blazej.developer@gmail.com",
+      to: "example@example.com",
+      subject: "Account Verification",
+      html: `<p>Click <a href="http://demomailtrap.com/users/verify/${verificationToken}">here</a> to verify your account.</p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: "Verification email sent" });
+  } catch (error) {
+    console.error("Error resending verification email:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
 // endpoint do zalogowania użytkownika
 router.post("/login", async (req, res) => {
