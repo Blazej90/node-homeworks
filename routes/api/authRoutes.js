@@ -104,6 +104,7 @@ router.post("/signup", async (req, res) => {
     }
 
     const verificationToken = uuidv4();
+    console.log("Verification Token:", verificationToken);
 
     const newUser = new User({ email, password, verificationToken });
     await newUser.save();
